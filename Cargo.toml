@@ -1,0 +1,11 @@
+[package]
+name = "substr8"
+version = "0.1.0"
+authors = ["Zach Childers<zach.childers@berkeley.educar>"]
+edition = "2018"
+
+[dependencies]
+gotham = "0.4.0"
+futures = "0.1.28"
+hyper = "0.12.33"
+mime = "0.3.13"
