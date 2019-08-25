@@ -1,28 +1,31 @@
-extern crate gotham;
+extern crate futures;
 #[macro_use]
 extern crate gotham_derive;
-extern crate futures;
+extern crate gotham;
 extern crate mime;
-extern crate serde;
 extern crate serde_json;
+extern crate serde;
+
 
 use futures::future;
 
-use gotham::helpers::http::response::create_response;
 use gotham::handler::HandlerFuture;
-use gotham::router::builder::*;
-use gotham::state::{FromState, State};
+use gotham::helpers::http::response::create_response;
 use gotham::middleware::state::StateMiddleware;
 use gotham::pipeline::single_middleware;
 use gotham::pipeline::single::single_pipeline;
+use gotham::router::builder::*;
+use gotham::state::{FromState, State};
 
 use hyper::StatusCode;
 
-use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
-
 use rusoto_core::Region;
 use rusoto_secretsmanager::{GetSecretValueRequest, ListSecretsRequest, SecretsManager, SecretsManagerClient};
+
+use serde::{Serialize, Deserialize};
+
+use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Secret{
@@ -33,7 +36,7 @@ struct Secret{
 #[derive(Clone, StateData)]
 struct Substr8 {
     secrets: HashMap<String, String>,
-   // pub client: SecretsManagerClient,
+    //client: Arc<SecretsManagerClient>,
 }
 
 impl Substr8 {
@@ -41,7 +44,7 @@ impl Substr8 {
 
 
         // Build client for later
-        let client = SecretsManagerClient::new(Region::UsWest2);
+        let client = Arc::new(SecretsManagerClient::new(Region::UsWest2));
 
         // Build Internal Mapping
         let mut secrets = HashMap::new();
@@ -71,9 +74,8 @@ fn get_secret(client: &SecretsManagerClient, name: String) -> String {
     let res = client.get_secret_value(req)
                         .sync();
 
-    let secret = res.unwrap().secret_string.unwrap();
-    println!("{:?}", secret);
-
+    let secret = res.unwrap()
+                .secret_string.unwrap();
     let pair: Secret = serde_json::from_str(&secret)
                             .expect("Couldn't deserialize");
     pair.test
